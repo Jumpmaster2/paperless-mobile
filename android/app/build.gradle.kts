@@ -76,6 +76,8 @@ android {
 }
 
 dependencies {
+    implementation("com.wireguard.android:tunnel:1.0.20260102")
+    testImplementation("junit:junit:4.13.2")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
 

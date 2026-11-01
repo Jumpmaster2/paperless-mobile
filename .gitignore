@@ -81,3 +81,4 @@ assets/changelogs/*.md
 # Android signing keys
 *.jks
 *.p12
+android/.kotlin/
