@@ -1,6 +1,11 @@
 # KronenPaperless
 
-KronenPaperless ist ein öffentlicher Fork von [astubenbord/paperless-mobile](https://github.com/astubenbord/paperless-mobile) durch [Jumpmaster2](https://github.com/Jumpmaster2), unter GPL-3.0. Der Fork ermöglicht eine eigene Android-App mit der Paketkennung `de.koeddi.kronenpaperless`; ein integrierter WireGuard-Tunnel folgt später.
+
+## Verbindung von unterwegs (eingebauter WireGuard-Tunnel)
+
+Unter „Verbindung von unterwegs“ kann eine WireGuard-Konfiguration importiert, die Android-VPN-Berechtigung erteilt und die Verbindung zum Paperless-Server getestet werden. Die Automatik verbindet bei Bedarf; der Tunnel gilt nur für KronenPaperless. Zugangsdaten und Konfigurationsdateien gehören nicht in das Repository.
+
+KronenPaperless ist ein öffentlicher Fork von [astubenbord/paperless-mobile](https://github.com/astubenbord/paperless-mobile) durch [Jumpmaster2](https://github.com/Jumpmaster2), unter GPL-3.0. Der Fork ermöglicht eine eigene Android-App mit der Paketkennung `de.koeddi.kronenpaperless`; die App enthält einen WireGuard-Tunnel für Verbindungen von unterwegs.
 
 Zum Bauen mit Flutter 3.35.4: `flutter pub get`, `flutter gen-l10n`, `dart run build_runner build --delete-conflicting-outputs` und `flutter build apk --release` (alternativ `flutter build appbundle --release`). Ohne `android/key.properties` wird mit dem Debug-Schlüssel signiert. Für Play-Releases ist ein eigener Release-Schlüssel erforderlich; `KP_VERSION_CODE` kann als Umgebungsvariable oder Gradle-Property den Version Code überschreiben. Weitere Hinweise stehen in [docs/FORK.md](docs/FORK.md).
 

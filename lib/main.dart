@@ -34,6 +34,10 @@ import 'package:paperless_mobile/core/store/bloc/global_settings_builder.dart';
 import 'package:paperless_mobile/core/store/encrypted_local_store.dart';
 import 'package:paperless_mobile/core/store/encrypted_local_store_secure_storage_impl.dart';
 import 'package:paperless_mobile/core/store/local_store.dart';
+import 'package:paperless_mobile/core/tunnel/tunnel_channel.dart';
+import 'package:paperless_mobile/core/tunnel/tunnel_manager.dart';
+import 'package:paperless_mobile/features/tunnel/view/tunnel_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:paperless_mobile/features/error_widget/error_fallback_card.dart';
 import 'package:paperless_mobile/features/logging/data/formatted_printer.dart';
 import 'package:paperless_mobile/features/logging/data/logger.dart';
@@ -163,9 +167,16 @@ void main() async {
         encryptedLocalStore,
       );
 
+      final tunnelManager = TunnelManager(
+        TunnelChannel(),
+        await SharedPreferences.getInstance(),
+      );
+      WidgetsBinding.instance.addObserver(tunnelManager);
+
       runApp(
         AppEntrypoint(
           sessionManager: sessionManager,
+          tunnelManager: tunnelManager,
           authenticationCubit: authenticationCubit,
           connectivityStatusService: connectivityStatusService,
           localNotificationService: localNotificationService,
@@ -198,6 +209,7 @@ void main() async {
 
 class AppEntrypoint extends StatelessWidget {
   final LocalStore localStore;
+  final TunnelManager tunnelManager;
   final EncryptedLocalStore encryptedLocalStore;
   final AuthenticationCubit authenticationCubit;
   final ConnectivityStatusService connectivityStatusService;
@@ -208,6 +220,7 @@ class AppEntrypoint extends StatelessWidget {
   const AppEntrypoint({
     super.key,
     required this.localStore,
+    required this.tunnelManager,
     required this.authenticationCubit,
     required this.connectivityStatusService,
     required this.localNotificationService,
@@ -225,6 +238,7 @@ class AppEntrypoint extends StatelessWidget {
               PaperlessAuthenticationApiImpl(sessionManager.client),
         ),
         Provider.value(value: localStore),
+        Provider.value(value: tunnelManager),
         Provider.value(value: encryptedLocalStore),
         Provider.value(value: authenticationCubit),
         Provider.value(
@@ -256,8 +270,25 @@ class _GoRouterShellState extends State<GoRouterShell> {
     }
     initializeDateFormatting();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      context.read<AuthenticationCubit>().restoreSession();
+      final store = context.read<LocalStore>().state;
+      final url = store.localUserData[store.loggedInAppUserId]?.serverUrl;
       FlutterNativeSplash.remove();
+      if (url != null) {
+        try {
+          await context.read<TunnelManager>().ensureReachable(url);
+        } on TunnelException catch (error) {
+          if (!mounted) return;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final messenger = rootNavigatorKey.currentContext;
+            if (messenger != null)
+              showSnackBar(
+                messenger,
+                tunnelErrorMessage(S.of(messenger)!, error.code),
+              );
+          });
+        }
+      }
+      if (mounted) context.read<AuthenticationCubit>().restoreSession();
     });
   }
 

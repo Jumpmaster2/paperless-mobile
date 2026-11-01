@@ -45,6 +45,8 @@ class MethodTunnelChannel implements TunnelChannel {
       return await _channel.invokeMethod<T>(method, arguments);
     } on PlatformException catch (e) {
       throw TunnelException(e.code);
+    } on MissingPluginException {
+      throw const TunnelException('library_missing');
     }
   }
 

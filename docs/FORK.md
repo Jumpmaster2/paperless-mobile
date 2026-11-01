@@ -27,5 +27,13 @@ Absichtlich geänderte Dateien:
 - `android/app/src/main/kotlin/de/koeddi/kronenpaperless/tunnel/TunnelController.kt`: steuert das WireGuard-Backend und bildet Fehler ab.
 - `android/app/src/main/kotlin/de/koeddi/kronenpaperless/tunnel/TunnelChannel.kt`: verbindet Android-Berechtigung und Flutter-Kanal.
 - `android/app/src/test/kotlin/de/koeddi/kronenpaperless/tunnel/WgConfigTest.kt`: prüft die Konfigurationsvalidierung.
-- `lib/core/tunnel/tunnel_channel.dart` und `test/core/tunnel/tunnel_channel_test.dart`: Dart-Schnittstelle und Kanaltests.
+- `lib/core/tunnel/tunnel_channel.dart` und `test/core/tunnel/tunnel_channel_test.dart`: Dart-Schnittstelle, Fehlerbehandlung und Kanaltests.
 - `android/app/proguard-rules.pro`: erhält die von der nativen WireGuard-Bibliothek verwendeten JNI-Namen bei R8.
+
+- `lib/core/tunnel/tunnel_manager.dart`: automatische Tunnelsteuerung und gespeicherte Einstellungen.
+- `lib/features/tunnel/view/tunnel_page.dart`: Assistent, Test und Einstellungen für die Verbindung von unterwegs.
+- `lib/main.dart`: Tunnel vor dem Wiederherstellen der Sitzung vorbereiten.
+- `lib/features/login/server_connection/` und `lib/routing/routes/auth_route.dart`: Tunnelprüfung und Einstieg vor dem Login.
+- `lib/features/settings/view/settings_page.dart`: Einstieg in die Tunneleinstellungen.
+- `lib/l10n/intl_en.arb` und `lib/l10n/intl_de.arb`: Texte des Assistenten.
+- `test/core/tunnel/tunnel_manager_test.dart` und `test/features/tunnel/tunnel_page_test.dart`: Tests für Tunnelsteuerung und Assistent.
