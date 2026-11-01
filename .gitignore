@@ -78,3 +78,6 @@ assets/changelogs/*.md
 
 # FVM Version Cache
 .fvm/
+# Android signing keys
+*.jks
+*.p12

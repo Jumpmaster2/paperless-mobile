@@ -1,0 +1,90 @@
+name: KronenPaperless release
+on:
+  push:
+    tags:
+      - 'kp-v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing kp-v* tag to release'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+      PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+    steps:
+      - name: Validate release tag
+        run: '[[ "$RELEASE_TAG" == kp-v* ]]'
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.4'
+          channel: stable
+      - name: Install dependencies and generate code
+        run: |
+          flutter pub get
+          flutter gen-l10n
+          dart run build_runner build --delete-conflicting-outputs
+      - name: Configure release signing
+        env:
+          KP_KEYSTORE_BASE64: ${{ secrets.KP_KEYSTORE_BASE64 }}
+          KP_KEYSTORE_PASSWORD: ${{ secrets.KP_KEYSTORE_PASSWORD }}
+          KP_KEY_PASSWORD: ${{ secrets.KP_KEY_PASSWORD }}
+          KP_KEY_ALIAS: ${{ secrets.KP_KEY_ALIAS }}
+        run: |
+          python3 - <<'PY'
+          import base64, os
+          from pathlib import Path
+          names = ('KP_KEYSTORE_BASE64', 'KP_KEYSTORE_PASSWORD', 'KP_KEY_PASSWORD', 'KP_KEY_ALIAS')
+          if not all(os.environ.get(name) for name in names):
+              raise SystemExit('Release signing secrets are required')
+          Path('android/kronenpaperless.jks').write_bytes(base64.b64decode(os.environ['KP_KEYSTORE_BASE64'], validate=True))
+          def prop(value):
+              return ''.join('\\u%04x' % int.from_bytes(raw[i:i+2], 'big') for raw in [value.encode('utf-16-be')] for i in range(0, len(raw), 2))
+          values = {'storeFile': '../kronenpaperless.jks', 'storePassword': os.environ['KP_KEYSTORE_PASSWORD'], 'keyPassword': os.environ['KP_KEY_PASSWORD'], 'keyAlias': os.environ['KP_KEY_ALIAS']}
+          Path('android/key.properties').write_text(''.join(k + '=' + prop(v) + '\n' for k, v in values.items()), encoding='ascii')
+          PY
+      - name: Build release artifacts
+        run: |
+          export KP_VERSION_CODE=$((GITHUB_RUN_NUMBER + 100))
+          flutter build appbundle --release
+          flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kronenpaperless-release
+          path: |
+            build/app/outputs/bundle/release/app-release.aab
+            build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+      - name: Attach artifacts to GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$RELEASE_TAG" >/dev/null 2>&1 || gh release create "$RELEASE_TAG" --verify-tag --title "$RELEASE_TAG" --generate-notes
+          gh release upload "$RELEASE_TAG" build/app/outputs/bundle/release/app-release.aab build/app/outputs/flutter-apk/app-release.apk --clobber
+      - name: Check Play credentials
+        id: play
+        run: |
+          if [ -n "$PLAY_SERVICE_ACCOUNT_JSON" ]; then echo 'enabled=true' >> "$GITHUB_OUTPUT"; fi
+      - name: Upload to Play internal track
+        if: steps.play.outputs.enabled == 'true'
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ env.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: de.koeddi.kronenpaperless
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          track: internal

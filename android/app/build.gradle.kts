@@ -17,7 +17,7 @@ val keystoreProperties = Properties().apply {
 }
 
 android {
-    namespace = "de.astubenbord.paperless_mobile"
+    namespace = "de.koeddi.kronenpaperless"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -38,12 +38,13 @@ android {
     }
 
     defaultConfig {
-        applicationId = "de.astubenbord.paperless_mobile"
+        applicationId = "de.koeddi.kronenpaperless"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
+        versionCode = (providers.gradleProperty("KP_VERSION_CODE").orNull
+            ?: System.getenv("KP_VERSION_CODE"))?.toInt() ?: flutter.versionCode
         versionName = flutter.versionName
 
         // Required for flutter_local_notifications
@@ -66,7 +67,7 @@ android {
 
     buildTypes {
         getByName("release") {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName(if (keystorePropsFile.exists()) "release" else "debug")
         }
         getByName("debug") {
             applicationIdSuffix = ".debug"

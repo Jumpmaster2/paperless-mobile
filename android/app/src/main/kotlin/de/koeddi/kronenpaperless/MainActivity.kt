@@ -1,4 +1,4 @@
-package de.astubenbord.paperless_mobile
+package de.koeddi.kronenpaperless
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 
