@@ -157,6 +157,10 @@ void main() async {
       await localNotificationService.initialize();
 
       final userApi = PaperlessUserApiImpl(sessionManager.client);
+      final tunnelManager = TunnelManager(
+        TunnelChannel(),
+        await SharedPreferences.getInstance(),
+      );
       final authenticationCubit = AuthenticationCubit(
         userApi,
         sessionManager,
@@ -165,12 +169,9 @@ void main() async {
         localNotificationService,
         localStore,
         encryptedLocalStore,
+        tunnelManager: tunnelManager,
       );
 
-      final tunnelManager = TunnelManager(
-        TunnelChannel(),
-        await SharedPreferences.getInstance(),
-      );
       WidgetsBinding.instance.addObserver(tunnelManager);
 
       runApp(
@@ -270,24 +271,7 @@ class _GoRouterShellState extends State<GoRouterShell> {
     }
     initializeDateFormatting();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final store = context.read<LocalStore>().state;
-      final url = store.localUserData[store.loggedInAppUserId]?.serverUrl;
       FlutterNativeSplash.remove();
-      if (url != null) {
-        try {
-          await context.read<TunnelManager>().ensureReachable(url);
-        } on TunnelException catch (error) {
-          if (!mounted) return;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            final messenger = rootNavigatorKey.currentContext;
-            if (messenger != null)
-              showSnackBar(
-                messenger,
-                tunnelErrorMessage(S.of(messenger)!, error.code),
-              );
-          });
-        }
-      }
       if (mounted) context.read<AuthenticationCubit>().restoreSession();
     });
   }
@@ -359,13 +343,27 @@ class _GoRouterShellState extends State<GoRouterShell> {
                     const LoggingOutRoute().go(context);
                     break;
                   case AuthenticationError error:
-                    showGenericError(context, error.error);
+                    if (error.error is TunnelException) {
+                      showSnackBar(
+                        context,
+                        tunnelErrorMessage(
+                          S.of(context)!,
+                          (error.error as TunnelException).code,
+                        ),
+                      );
+                    } else {
+                      showGenericError(context, error.error);
+                    }
                     context.pop();
                     break;
-                  case ConnectionFailure():
+                  case ConnectionFailure(:final tunnelErrorCode):
                     showSnackBar(
                       context,
-                      S.of(context)!.couldNotEstablishConnectionToTheServer,
+                      tunnelErrorCode == null
+                          ? S
+                                .of(context)!
+                                .couldNotEstablishConnectionToTheServer
+                          : tunnelErrorMessage(S.of(context)!, tunnelErrorCode),
                     );
                     LoginToExistingAccountRoute().go(context);
                   default:

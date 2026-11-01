@@ -117,7 +117,8 @@ class AuthenticateRoute extends GoRouteData with $AuthenticateRoute {
         );
       },
       child: BlocProvider(
-        create: (context) => AuthenticateUserCubit(),
+        create: (context) =>
+            AuthenticateUserCubit(context.read<TunnelManager>()),
         child: AuthenticateUserPage(
           serverUrl: serverUrl,
           initialCredentials: $extra?.credentials,
@@ -147,7 +148,7 @@ class OtpRoute extends GoRouteData with $OtpRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return BlocProvider(
-      create: (context) => AuthenticateUserCubit(),
+      create: (context) => AuthenticateUserCubit(context.read<TunnelManager>()),
       child: OtpInputPage(
         serverUrl: serverUrl,
         clientCertificate: $extra.clientCertificate,

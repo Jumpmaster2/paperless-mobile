@@ -32,8 +32,12 @@ Absichtlich geänderte Dateien:
 
 - `lib/core/tunnel/tunnel_manager.dart`: automatische Tunnelsteuerung und gespeicherte Einstellungen.
 - `lib/features/tunnel/view/tunnel_page.dart`: Assistent, Test und Einstellungen für die Verbindung von unterwegs.
-- `lib/main.dart`: Tunnel vor dem Wiederherstellen der Sitzung vorbereiten.
+- `lib/main.dart`: Tunnelmanager bereitstellen und Tunnelfehler anzeigen.
 - `lib/features/login/server_connection/` und `lib/routing/routes/auth_route.dart`: Tunnelprüfung und Einstieg vor dem Login.
 - `lib/features/settings/view/settings_page.dart`: Einstieg in die Tunneleinstellungen.
 - `lib/l10n/intl_en.arb` und `lib/l10n/intl_de.arb`: Texte des Assistenten.
 - `test/core/tunnel/tunnel_manager_test.dart` und `test/features/tunnel/tunnel_page_test.dart`: Tests für Tunnelsteuerung und Assistent.
+
+- `lib/features/login/cubit/authentication_cubit.dart` und `authentication_state.dart`: Tunnel für Zielkonten vorbereiten und Fehler weitergeben.
+- `test/features/login/authentication_tunnel_test.dart`: prüft Tunnelaufrufe und Fehler bei Kontowechsel, Wiederherstellung und Hinzufügen.
+- `lib/features/login/authenticate_user/` und `lib/routing/routes/auth_route.dart`: Tunnelprüfung und Fehleranzeige vor Login und OTP.
