@@ -61,8 +61,10 @@ jobs:
       - name: Build release artifacts
         run: |
           export KP_VERSION_CODE=$((GITHUB_RUN_NUMBER + 1000))
-          flutter build appbundle --release
-          flutter build apk --release
+          KP_VERSION_NAME="${RELEASE_TAG#kp-v}"
+          flutter build appbundle --release --build-name "$KP_VERSION_NAME"
+          flutter build apk --release --build-name "$KP_VERSION_NAME"
+          cp build/app/outputs/flutter-apk/app-release.apk "build/app/outputs/flutter-apk/KronenPaperless-$KP_VERSION_NAME.apk"
       - uses: actions/upload-artifact@v4
         with:
           name: kronenpaperless-release
@@ -74,8 +76,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view "$RELEASE_TAG" >/dev/null 2>&1 || gh release create "$RELEASE_TAG" --verify-tag --title "$RELEASE_TAG" --generate-notes
-          gh release upload "$RELEASE_TAG" build/app/outputs/bundle/release/app-release.aab build/app/outputs/flutter-apk/app-release.apk --clobber
+          KP_VERSION_NAME="${RELEASE_TAG#kp-v}"
+          cat > release-notes.md <<NOTES
+          KronenPaperless $KP_VERSION_NAME – Paperless Mobile with a built-in WireGuard tunnel.
+
+          **Install:** download \`KronenPaperless-$KP_VERSION_NAME.apk\` below (or use Obtainium with this repository). Package name \`de.koeddi.kronenpaperless\`, installs next to the original Paperless Mobile. The GitHub build and the Google Play build are signed differently, stick to one source.
+
+          See the [README](https://github.com/Jumpmaster2/paperless-mobile#readme) for how the tunnel works.
+          NOTES
+          sed -i 's/^          //' release-notes.md
+          gh release view "$RELEASE_TAG" >/dev/null 2>&1 || gh release create "$RELEASE_TAG" --verify-tag --title "KronenPaperless $KP_VERSION_NAME" --notes-file release-notes.md --generate-notes
+          gh release upload "$RELEASE_TAG" "build/app/outputs/flutter-apk/KronenPaperless-$KP_VERSION_NAME.apk" --clobber
       - name: Check Play credentials
         id: play
         run: |

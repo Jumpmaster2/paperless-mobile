@@ -1,13 +1,34 @@
 # KronenPaperless
 
+**Paperless Mobile with a built-in WireGuard tunnel** – reach your [Paperless-ngx](https://github.com/paperless-ngx/paperless-ngx) server from anywhere, even if it is only available inside your home network, without switching a VPN on by hand.
 
-## Verbindung von unterwegs (eingebauter WireGuard-Tunnel)
+KronenPaperless is a fork of [Paperless Mobile](https://github.com/astubenbord/paperless-mobile) by Anton Stubenbord (GPL-3.0). All features of Paperless Mobile are unchanged; the fork only adds the tunnel. The changes have also been offered upstream in [astubenbord/paperless-mobile#707](https://github.com/astubenbord/paperless-mobile/pull/707) (see also [#388](https://github.com/astubenbord/paperless-mobile/issues/388)).
 
-Unter „Verbindung von unterwegs“ kann eine WireGuard-Konfiguration importiert, die Android-VPN-Berechtigung erteilt und die Verbindung zum Paperless-Server getestet werden. Die Automatik verbindet bei Bedarf; der Tunnel gilt nur für KronenPaperless. Zugangsdaten und Konfigurationsdateien gehören nicht in das Repository.
+## How it works
 
-KronenPaperless ist ein öffentlicher Fork von [astubenbord/paperless-mobile](https://github.com/astubenbord/paperless-mobile) durch [Jumpmaster2](https://github.com/Jumpmaster2), unter GPL-3.0. Der Fork ermöglicht eine eigene Android-App mit der Paketkennung `de.koeddi.kronenpaperless`; die App enthält einen WireGuard-Tunnel für Verbindungen von unterwegs.
+- **Import your WireGuard configuration once** (`.conf` file from your router, e.g. UniFi, Fritz!Box, OPNsense, wg-easy) under *Settings → Connection on the go*, grant the Android VPN permission and test the connection.
+- **Only this app uses the tunnel.** Other apps and the rest of your phone are not routed through it, and no separate WireGuard app is needed.
+- **Automatic:** enter the names of your home Wi-Fi networks. At home the app connects directly, anywhere else it starts the tunnel by itself and stops it again a few minutes after you leave the app (1/5/15/30 minutes or never). Without home Wi-Fi names the app checks whether Paperless answers directly (a reverse proxy answering *403* does not count) and only starts the tunnel if needed.
+- **Diagnostics:** *Check connection in detail* shows tunnel handshake, DNS of the VPN configuration vs. your phone, TCP and Paperless checks, home Wi-Fi detection and a plain-language verdict. The report can be copied.
+- **Privacy:** the configuration is stored encrypted (Android Keystore) and excluded from backups. The location permission is optional and only used because Android requires it to read the Wi-Fi name; no location is stored or sent. The app sends no data to the developer. [Privacy policy](https://jumpmaster2.github.io/KronenPaperless-Datenschutz/) (German).
 
-Zum Bauen mit Flutter 3.35.4: `flutter pub get`, `flutter gen-l10n`, `dart run build_runner build --delete-conflicting-outputs` und `flutter build apk --release` (alternativ `flutter build appbundle --release`). Ohne `android/key.properties` wird mit dem Debug-Schlüssel signiert. Für Play-Releases ist ein eigener Release-Schlüssel erforderlich; `KP_VERSION_CODE` kann als Umgebungsvariable oder Gradle-Property den Version Code überschreiben. Weitere Hinweise stehen in [docs/FORK.md](docs/FORK.md).
+## Install
+
+- **GitHub:** signed APKs are attached to the [releases](https://github.com/Jumpmaster2/paperless-mobile/releases). Works well with [Obtainium](https://github.com/ImranR98/Obtainium) for automatic updates.
+- **Google Play:** currently in closed testing. If you would like to help, please open an [issue](https://github.com/Jumpmaster2/paperless-mobile/issues) or comment on [#388](https://github.com/astubenbord/paperless-mobile/issues/388).
+- The package name is `de.koeddi.kronenpaperless`, so it can be installed next to the original Paperless Mobile. The GitHub and the Google Play version are signed differently: stick to one source, otherwise uninstall first.
+
+## Kurz auf Deutsch
+
+KronenPaperless ist Paperless Mobile mit eingebautem WireGuard-Tunnel. Die WireGuard-Datei vom Router wird einmal importiert, danach verbindet die App unterwegs automatisch und nur für sich selbst. Im eingetragenen Heim-WLAN wird kein Tunnel gebraucht. Unter „Verbindung genau prüfen“ zeigt die App, woran es hakt.
+
+## Building
+
+Flutter 3.35.4: `flutter pub get`, `flutter gen-l10n`, `dart run build_runner build --delete-conflicting-outputs`, then `flutter build apk --release` (or `appbundle`). Without `android/key.properties` the release build is signed with the debug key. Use release builds for testing: debug builds fail to dex the WireGuard library together with core library desugaring (see #707). How to merge upstream changes and which files are changed: [docs/FORK.md](docs/FORK.md).
+
+---
+
+*Below: the original README of Paperless Mobile. Store badges and issue links there refer to the original app.*
 
 ---
 
