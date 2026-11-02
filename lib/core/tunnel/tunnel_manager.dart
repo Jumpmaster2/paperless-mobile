@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'tunnel_channel.dart';
+import 'http_prober.dart';
 
 enum TunnelConnectionState { off, connecting, connected, error }
 
@@ -180,27 +180,6 @@ class TunnelManager with WidgetsBindingObserver {
     state.dispose();
   }
 
-  static Future<bool> probeServer(String url) async {
-    final client = HttpClient()..connectionTimeout = const Duration(seconds: 2);
-    try {
-      final request = await client
-          .headUrl(Uri.parse(url))
-          .timeout(const Duration(seconds: 2));
-      final response = await request.close().timeout(
-        const Duration(seconds: 2),
-      );
-      response.listen((_) {}).cancel();
-      return true;
-    } on HandshakeException {
-      return true;
-    } on TlsException {
-      return true;
-    } on SocketException {
-      return false;
-    } on TimeoutException {
-      return false;
-    } finally {
-      client.close(force: true);
-    }
-  }
+  static Future<bool> probeServer(String url) async =>
+      (await HttpProber().probe(url)).isPaperless;
 }

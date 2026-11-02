@@ -43,3 +43,7 @@ Absichtlich geänderte Dateien:
 - `lib/features/login/authenticate_user/` und `lib/routing/routes/auth_route.dart`: Tunnelprüfung und Fehleranzeige vor Login und OTP.
 
 - `android/app/src/main/kotlin/de/koeddi/kronenpaperless/tunnel/TunnelDiagnostics.kt` und `android/app/src/test/kotlin/de/koeddi/kronenpaperless/tunnel/TunnelDiagnosticsTest.kt`: geheiminformationsfreie Diagnoseabbildung und JVM-Test.
+
+- `lib/core/tunnel/http_prober.dart`: prüft die Paperless-API anhand von Status und Headern; TLS-Fehler gelten nicht als Erreichbarkeitsnachweis.
+- `lib/core/tunnel/dns_client.dart` und `tunnel_diagnostics.dart`: DNS-Abfrage und strukturierter technischer Diagnosebericht ohne Tunnelgeheimnisse.
+- `test/core/tunnel/http_prober_test.dart` und `dns_client_test.dart`: socketfreie Tests der HTTP-Signatur und DNS-Paketverarbeitung.
