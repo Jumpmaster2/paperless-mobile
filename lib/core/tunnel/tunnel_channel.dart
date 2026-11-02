@@ -12,6 +12,45 @@ class TunnelConfigInfo {
   final List<String> interfaceAddresses;
 }
 
+class TunnelPeerInfo {
+  const TunnelPeerInfo({
+    this.endpointHost,
+    this.endpointPort,
+    required this.allowedIps,
+    this.persistentKeepalive,
+    required this.rxBytes,
+    required this.txBytes,
+    this.lastHandshake,
+  });
+  final String? endpointHost;
+  final int? endpointPort;
+  final List<String> allowedIps;
+  final int? persistentKeepalive;
+  final int rxBytes;
+  final int txBytes;
+  final DateTime? lastHandshake;
+}
+
+class TunnelDiagnosticsData {
+  const TunnelDiagnosticsData({
+    required this.state,
+    required this.interfaceAddresses,
+    required this.dnsServers,
+    required this.searchDomains,
+    this.mtu,
+    required this.peers,
+  });
+  final TunnelStatus state;
+  final List<String> interfaceAddresses;
+  final List<String> dnsServers;
+  final List<String> searchDomains;
+  final int? mtu;
+  final List<TunnelPeerInfo> peers;
+}
+
+List<String> _strings(Object? value) =>
+    value is List ? value.whereType<String>().toList() : [];
+
 enum TunnelStatus { up, down }
 
 class TunnelException implements Exception {
@@ -32,6 +71,7 @@ abstract class TunnelChannel {
   Future<TunnelStatus> up();
   Future<TunnelStatus> down();
   Future<TunnelStatus> status();
+  Future<TunnelDiagnosticsData> diagnostics();
 }
 
 class MethodTunnelChannel implements TunnelChannel {
@@ -60,6 +100,46 @@ class MethodTunnelChannel implements TunnelChannel {
       peerCount: info['peerCount']! as int,
       interfaceAddresses: (info['interfaceAddresses']! as List<Object?>)
           .cast<String>(),
+    );
+  }
+
+  @override
+  Future<TunnelDiagnosticsData> diagnostics() async {
+    final data = await _invoke<Map<Object?, Object?>>('diagnostics') ?? {};
+    final rawPeers = data['peers'];
+    final peers = <TunnelPeerInfo>[];
+    if (rawPeers is List) {
+      for (final item in rawPeers) {
+        if (item is! Map) continue;
+        final timestamp = item['lastHandshakeEpochMillis'];
+        peers.add(
+          TunnelPeerInfo(
+            endpointHost: item['endpointHost'] is String
+                ? item['endpointHost'] as String
+                : null,
+            endpointPort: item['endpointPort'] is int
+                ? item['endpointPort'] as int
+                : null,
+            allowedIps: _strings(item['allowedIps']),
+            persistentKeepalive: item['persistentKeepalive'] is int
+                ? item['persistentKeepalive'] as int
+                : null,
+            rxBytes: item['rxBytes'] is int ? item['rxBytes'] as int : 0,
+            txBytes: item['txBytes'] is int ? item['txBytes'] as int : 0,
+            lastHandshake: timestamp is int && timestamp > 0
+                ? DateTime.fromMillisecondsSinceEpoch(timestamp, isUtc: true)
+                : null,
+          ),
+        );
+      }
+    }
+    return TunnelDiagnosticsData(
+      state: data['state'] == 'UP' ? TunnelStatus.up : TunnelStatus.down,
+      interfaceAddresses: _strings(data['interfaceAddresses']),
+      dnsServers: _strings(data['dnsServers']),
+      searchDomains: _strings(data['searchDomains']),
+      mtu: data['mtu'] is int ? data['mtu'] as int : null,
+      peers: peers,
     );
   }
 

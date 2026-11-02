@@ -41,3 +41,5 @@ Absichtlich geänderte Dateien:
 - `lib/features/login/cubit/authentication_cubit.dart` und `authentication_state.dart`: Tunnel für Zielkonten vorbereiten und Fehler weitergeben.
 - `test/features/login/authentication_tunnel_test.dart`: prüft Tunnelaufrufe und Fehler bei Kontowechsel, Wiederherstellung und Hinzufügen.
 - `lib/features/login/authenticate_user/` und `lib/routing/routes/auth_route.dart`: Tunnelprüfung und Fehleranzeige vor Login und OTP.
+
+- `android/app/src/main/kotlin/de/koeddi/kronenpaperless/tunnel/TunnelDiagnostics.kt` und `android/app/src/test/kotlin/de/koeddi/kronenpaperless/tunnel/TunnelDiagnosticsTest.kt`: geheiminformationsfreie Diagnoseabbildung und JVM-Test.

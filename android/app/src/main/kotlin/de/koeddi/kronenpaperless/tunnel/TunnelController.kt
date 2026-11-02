@@ -33,6 +33,19 @@ class TunnelController private constructor(context: Context) {
         backend.setState(tunnel, Tunnel.State.UP, WgConfig.parseAndPin(text, context.packageName)).name
     }
     fun down(): String = safely { backend.setState(tunnel, Tunnel.State.DOWN, null).name }
+    fun diagnostics(): Map<String, Any?> = safely {
+        val text = store.load() ?: throw TunnelFailure("config_missing")
+        val config = WgConfig.parseAndPin(text, context.packageName)
+        val state = backend.getState(tunnel)
+        val counters = if (state == Tunnel.State.UP) {
+            val statistics = backend.getStatistics(tunnel)
+            statistics.peers().associateWith { key ->
+                val peer = statistics.peer(key)
+                PeerCounters(peer?.rxBytes() ?: 0L, peer?.txBytes() ?: 0L, peer?.latestHandshakeEpochMillis() ?: 0L)
+            }
+        } else emptyMap()
+        diagnosticMap(config, state.name, counters)
+    }
     fun status(): String = safely { backend.getState(tunnel).name }
 
     private inline fun <T> safely(block: () -> T): T = try { block() }

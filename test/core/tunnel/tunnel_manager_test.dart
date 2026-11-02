@@ -7,6 +7,15 @@ import 'package:paperless_mobile/core/tunnel/tunnel_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FakeChannel implements TunnelChannel {
+  @override
+  Future<TunnelDiagnosticsData> diagnostics() async =>
+      const TunnelDiagnosticsData(
+        state: TunnelStatus.down,
+        interfaceAddresses: [],
+        dnsServers: [],
+        searchDomains: [],
+        peers: [],
+      );
   bool permitted = true;
   bool configured = true;
   TunnelStatus current = TunnelStatus.down;
