@@ -1,14 +1,36 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="900"
-    android:viewportHeight="900">
-  <group android:scaleX="0.44"
-      android:scaleY="0.44"
-      android:translateX="252"
-      android:translateY="252">
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+  <!-- KronenPaperless: document with a shield badge, kept inside the 66dp safe zone -->
+  <group
+      android:scaleX="0.162"
+      android:scaleY="0.162"
+      android:translateX="7.5"
+      android:translateY="8.6">
     <path
-        android:pathData="M238.83,863.55C234.43,842.65 225.63,800.84 224.53,800.84 38.6,689.73 60.61,497.2 122.22,387.18c13.2,138.62 258.54,234.34 115.52,403.76 -1.1,2.2 6.6,28.6 13.2,52.81 28.6,-48.41 71.51,-106.72 69.31,-112.22C144.22,302.47 694.3,269.46 808.72,3.22c51.71,257.44 -26.4,655.7 -468.67,756.91 -2.2,1.1 -80.31,138.62 -83.61,139.72 0,-2.2 -33,-1.1 -28.6,-12.1 2.2,-6.6 6.6,-15.4 11,-24.2zM347.75,673.23C278.44,509.3 481.97,328.87 583.18,283.77 376.35,468.59 341.15,606.12 347.75,673.23ZM233.33,760.14c56.11,-64.91 -9.9,-176.03 -49.51,-212.33 67.11,115.52 62.71,182.63 49.51,212.33z"
-        android:fillColor="#17541f"/>
+        android:fillColor="#FFFFFF"
+        android:pathData="M150,96h150l70,70v250a20,20 0,0 1,-20 20H150a20,20 0,0 1,-20 -20V116a20,20 0,0 1,20 -20z" />
+    <path
+        android:fillColor="#CFE8D9"
+        android:pathData="M300,96v50a20,20 0,0 0,20 20h50z" />
+    <path
+        android:fillColor="#9CC8AE"
+        android:pathData="M178,200h134a8,8 0,0 1,0 16h-134a8,8 0,0 1,0 -16zM178,236h154a8,8 0,0 1,0 16h-154a8,8 0,0 1,0 -16zM178,272h104a8,8 0,0 1,0 16h-104a8,8 0,0 1,0 -16z" />
+    <path
+        android:fillColor="#17A05D"
+        android:strokeColor="#0F3D26"
+        android:strokeWidth="14"
+        android:pathData="M260,372a92,92 0,1 0,184 0a92,92 0,1 0,-184 0z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M352,318l46,18v30c0,30 -20,52 -46,62c-26,-10 -46,-32 -46,-62v-30z" />
+    <path
+        android:strokeColor="#17A05D"
+        android:strokeWidth="12"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M332,372l14,14l28,-30" />
   </group>
 </vector>
