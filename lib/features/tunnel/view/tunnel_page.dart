@@ -1,6 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:permission_handler/permission_handler.dart';
+import 'package:paperless_mobile/core/tunnel/home_network_detector.dart';
+import 'package:paperless_mobile/core/tunnel/location_permission.dart';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -25,14 +29,97 @@ String tunnelErrorMessage(S s, String code) => switch (code) {
 };
 
 class TunnelPage extends StatefulWidget {
-  const TunnelPage({super.key, this.initialServerUrl, this.diagnostics});
+  const TunnelPage({
+    super.key,
+    this.initialServerUrl,
+    this.diagnostics,
+    this.locationPermission,
+  });
+  final LocationPermission? locationPermission;
   final TunnelDiagnostics? diagnostics;
   final String? initialServerUrl;
   @override
   State<TunnelPage> createState() => _TunnelPageState();
 }
 
-class _TunnelPageState extends State<TunnelPage> {
+class _TunnelPageState extends State<TunnelPage> with WidgetsBindingObserver {
+  final _ssid = TextEditingController();
+  HomeNetworkResult _home = const HomeNetworkResult(
+    HomeNetworkState.unknown,
+    reason: HomeNetworkReason.unknown,
+  );
+  String? _ssidError;
+  bool _settings = false;
+  late final LocationPermission _permission;
+
+  Future<void> _refreshHome() async {
+    final result = await _manager.homeNetworkDetector.detect(
+      _manager.homeSsids,
+    );
+    if (mounted) setState(() => _home = result);
+  }
+
+  Future<void> _addSsid(String value) async {
+    final before = _manager.homeSsids;
+    await _manager.addHomeSsid(value);
+    if (!mounted) return;
+    setState(() {
+      _ssidError = _manager.homeSsids.length == before.length
+          ? S.of(context)!.homeInvalid
+          : null;
+      if (_ssidError == null) _ssid.clear();
+    });
+    await _refreshHome();
+  }
+
+  Future<void> _useCurrent() async {
+    var status = await _permission.status();
+    if (_permission.isPermanentlyDenied(status)) {
+      if (mounted)
+        setState(() {
+          _settings = true;
+          _ssidError = S.of(context)!.homePermissionMissing;
+        });
+      return;
+    }
+    if (!status.isGranted) status = await _permission.request();
+    if (!mounted) return;
+    if (!status.isGranted) {
+      setState(() {
+        _settings = _permission.isPermanentlyDenied(status);
+        _ssidError = S.of(context)!.homePermissionMissing;
+      });
+      return;
+    }
+    final result = await _manager.channel.currentSsid();
+    if (!mounted) return;
+    setState(() => _settings = false);
+    if (result.status == SsidStatus.ok && result.ssid != null) {
+      await _addSsid(result.ssid!);
+    } else {
+      setState(
+        () => _ssidError = switch (result.status) {
+          SsidStatus.locationOff => S.of(context)!.homeLocationOff,
+          SsidStatus.notWifi => S.of(context)!.homeNotWifi,
+          SsidStatus.permissionMissing => S.of(context)!.homePermissionMissing,
+          _ => S.of(context)!.homeUnknown,
+        },
+      );
+      await _refreshHome();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshHome();
+      _permission.status().then((status) {
+        if (mounted)
+          setState(() => _settings = _permission.isPermanentlyDenied(status));
+      });
+    }
+  }
+
   final _server = TextEditingController();
   bool _hasConfig = false;
   bool _busy = false;
@@ -122,6 +209,18 @@ class _TunnelPageState extends State<TunnelPage> {
         DiagnosticStatus.skipped => s.diagSkipped,
       },
     ];
+    if (step.id == 'home_network') {
+      details.add(switch (step.data['state']) {
+        'atHome' => s.homeNoTunnel,
+        'away' => s.homeAway,
+        _ => s.homeUnrecognized(switch (step.data['reason']) {
+          'noHomeSsids' => s.homeNoNames,
+          'permissionMissing' => s.homePermissionMissing,
+          'locationOff' => s.homeLocationOff,
+          _ => s.homeUnknown,
+        }),
+      });
+    }
     if (step.id == 'verdict' && _report != null) {
       details.add(_verdict(s, _report!.verdict));
     }
@@ -150,6 +249,7 @@ class _TunnelPageState extends State<TunnelPage> {
   }
 
   String _stepTitle(S s, String id) => switch (id) {
+    'home_network' => s.homeTitle,
     'tunnel' => s.diagTunnel,
     'config' => s.diagConfig,
     'systemDns' => s.diagSystemDns,
@@ -173,6 +273,9 @@ class _TunnelPageState extends State<TunnelPage> {
     super.initState();
     _server.text = widget.initialServerUrl ?? '';
     _manager = context.read<TunnelManager>();
+    _permission = widget.locationPermission ?? LocationPermissionHandler();
+    WidgetsBinding.instance.addObserver(this);
+    _refreshHome();
     _refresh();
   }
 
@@ -299,6 +402,8 @@ class _TunnelPageState extends State<TunnelPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _ssid.dispose();
     _server.dispose();
     super.dispose();
   }
@@ -479,12 +584,18 @@ class _TunnelPageState extends State<TunnelPage> {
           ValueListenableBuilder<TunnelViewState>(
             valueListenable: _manager.state,
             builder: (context, state, _) => ListTile(
-              title: Text(switch (state.state) {
-                TunnelConnectionState.off => s.tunnelStatusOff,
-                TunnelConnectionState.connecting => s.tunnelStatusConnecting,
-                TunnelConnectionState.connected => s.tunnelStatusConnected,
-                TunnelConnectionState.error => s.tunnelStatusError,
-              }),
+              title: Text(
+                state.atHome
+                    ? s.homeNoTunnel
+                    : switch (state.state) {
+                        TunnelConnectionState.off => s.tunnelStatusOff,
+                        TunnelConnectionState.connecting =>
+                          s.tunnelStatusConnecting,
+                        TunnelConnectionState.connected =>
+                          s.tunnelStatusConnected,
+                        TunnelConnectionState.error => s.tunnelStatusError,
+                      },
+              ),
               subtitle: state.errorCode == null
                   ? null
                   : Text(tunnelErrorMessage(s, state.errorCode!)),
@@ -500,8 +611,68 @@ class _TunnelPageState extends State<TunnelPage> {
                     if (mounted) setState(() {});
                   },
           ),
+          const Divider(),
+          Text(s.homeTitle, style: Theme.of(context).textTheme.titleMedium),
+          Text(s.homeExplanation),
+          Text(s.homePrivacy),
+          for (final name in _manager.homeSsids)
+            ListTile(
+              title: Text(name),
+              trailing: IconButton(
+                tooltip: s.homeDelete,
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () async {
+                  await _manager.removeHomeSsid(name);
+                  if (mounted) setState(() {});
+                  await _refreshHome();
+                },
+              ),
+            ),
+          TextField(
+            controller: _ssid,
+            decoration: InputDecoration(
+              labelText: s.homeName,
+              errorText: _ssidError,
+            ),
+          ),
+          Wrap(
+            spacing: 8,
+            children: [
+              FilledButton(
+                onPressed: () => _addSsid(_ssid.text),
+                child: Text(s.homeAdd),
+              ),
+              OutlinedButton(
+                onPressed: _useCurrent,
+                child: Text(s.homeUseCurrent),
+              ),
+              if (_settings)
+                OutlinedButton(
+                  onPressed: () => _permission.openSettings(),
+                  child: Text(s.homeOpenSettings),
+                ),
+            ],
+          ),
+          Text(
+            s.homeNow +
+                ' ' +
+                switch (_home.state) {
+                  HomeNetworkState.atHome => s.homeAtHome(_home.ssid ?? ''),
+                  HomeNetworkState.away => s.homeAway,
+                  HomeNetworkState.unknown => s.homeUnrecognized(
+                    switch (_home.reason) {
+                      HomeNetworkReason.noHomeSsids => s.homeNoNames,
+                      HomeNetworkReason.permissionMissing =>
+                        s.homePermissionMissing,
+                      HomeNetworkReason.locationOff => s.homeLocationOff,
+                      _ => s.homeUnknown,
+                    },
+                  ),
+                },
+          ),
           SwitchListTile(
             title: Text(s.tunnelDirect),
+            subtitle: Text(s.homeDirectHint),
             value: _manager.directCheck,
             onChanged: _busy
                 ? null

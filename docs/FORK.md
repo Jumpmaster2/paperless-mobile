@@ -58,3 +58,5 @@ Tunnel. Außerhalb wird direkt ein konfigurierter Tunnel verwendet; bei
 unbekanntem WLAN bleibt die bisherige direkte Serverprüfung erhalten. Für die
 SSID-Erkennung benötigt Android die Standortberechtigung und einen aktiven
 Standortdienst. Netzwechsel im Vordergrund lösen eine erneute Prüfung aus.
+
+Heimnetz-Erkennung: WLAN-Namen können hinterlegt werden, damit zu Hause kein Tunnel benötigt wird. Android verlangt Standort-Berechtigung und aktivierte Standortdienste nur zum Lesen des WLAN-Namens; der Standort wird weder gespeichert noch gesendet.

@@ -1301,5 +1301,39 @@
         "type": "int"
       }
     }
-  }
+  },
+  "homeTitle": "Home network (Wi-Fi)",
+  "homeExplanation": "Enter the names of your home Wi-Fi networks here. The app does not need a tunnel on these networks; elsewhere it turns the tunnel on automatically.",
+  "homePrivacy": "On Android, reading the Wi-Fi name requires location permission and enabled location services. The app does not store or send your location.",
+  "homeName": "Wi-Fi name",
+  "homeAdd": "Add",
+  "homeDelete": "Delete Wi-Fi name",
+  "homeInvalid": "Invalid or duplicate Wi-Fi name.",
+  "homeUseCurrent": "Use current Wi-Fi",
+  "homeOpenSettings": "Open app settings",
+  "homeLocationOff": "Turn on location services",
+  "homeNotWifi": "You are not connected to Wi-Fi",
+  "homePermissionMissing": "Location permission missing",
+  "homeUnknown": "Unknown",
+  "homeNoNames": "No Wi-Fi names entered",
+  "homeNow": "Now:",
+  "homeAway": "away",
+  "homeAtHome": "at home (Wi-Fi '{ssid}')",
+  "@homeAtHome": {
+    "placeholders": {
+      "ssid": {
+        "type": "String"
+      }
+    }
+  },
+  "homeUnrecognized": "cannot detect ({reason})",
+  "@homeUnrecognized": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "homeNoTunnel": "At home, no tunnel needed",
+  "homeDirectHint": "Used only when no Wi-Fi names are entered or detection is unavailable."
 }

@@ -153,3 +153,5 @@ Most users run paperless-ngx behind a reverse proxy. Typically, the default uplo
 #### I cannot log in since paperless-ngx 1.14.0 (and above)
 
 The app requires information about the current user from the paperless API. As a result, the `Users -> View` and the `UISettings -> View` permissions are required for each user trying to log into the app. Otherwise, the app has no way of obtaining your user id and other information required for the usage of most features.
+
+Heimnetz-Erkennung: WLAN-Namen können hinterlegt werden, damit zu Hause kein Tunnel benötigt wird. Android verlangt Standort-Berechtigung und aktivierte Standortdienste nur zum Lesen des WLAN-Namens; der Standort wird weder gespeichert noch gesendet.
