@@ -47,3 +47,5 @@ Absichtlich geänderte Dateien:
 - `lib/core/tunnel/http_prober.dart`: prüft die Paperless-API anhand von Status und Headern; TLS-Fehler gelten nicht als Erreichbarkeitsnachweis.
 - `lib/core/tunnel/dns_client.dart` und `tunnel_diagnostics.dart`: DNS-Abfrage und strukturierter technischer Diagnosebericht ohne Tunnelgeheimnisse.
 - `test/core/tunnel/http_prober_test.dart` und `dns_client_test.dart`: socketfreie Tests der HTTP-Signatur und DNS-Paketverarbeitung.
+
+Die Seite „Verbindung von unterwegs“ bietet eine Diagnose mit einzelnen Prüfschritten und einem kopierbaren Bericht. Die Prüfung verwendet die eingegebene Serveradresse und zeigt die gespeicherten Verbindungseinstellungen ohne Schlüssel an.

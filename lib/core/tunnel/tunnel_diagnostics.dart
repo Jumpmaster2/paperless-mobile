@@ -47,15 +47,45 @@ class DiagnosticsReport {
   final DiagnosticsVerdict verdict;
   final String verdictKey;
   final Map<String, Object?> parameters;
-  String toText() => [
-    'Datum: ${date.toIso8601String()}',
-    'Server: $serverHost',
-    ...steps.map(
-      (s) =>
-          '${s.title} [${s.status.name}]: ${s.data}${s.hint == null ? '' : ' (${s.hint})'}',
-    ),
-    'Urteil: $verdictKey $parameters',
-  ].join('\n');
+  // Never serialize untrusted titles, hints, parameters, host names or raw
+  // platform data. They can contain credentials or an entire configuration.
+  String toText() {
+    String title(String id) => switch (id) {
+      'tunnel' => 'Tunnel',
+      'config' => 'Einstellungen',
+      'systemDns' => 'Namenssuche des Geräts',
+      'vpnDns' => 'Namenssuche über VPN',
+      'tcp' => 'Verbindung zum Server',
+      'http' => 'Antwort von Paperless',
+      'verdict' => 'Ergebnis',
+      _ => 'Prüfung',
+    };
+    String status(DiagnosticStatus value) => switch (value) {
+      DiagnosticStatus.ok => 'In Ordnung',
+      DiagnosticStatus.warn => 'Hinweis',
+      DiagnosticStatus.error => 'Fehler',
+      DiagnosticStatus.skipped => 'Übersprungen',
+    };
+    final result = switch (verdict) {
+      DiagnosticsVerdict.tunnelDown => 'Der Tunnel ist nicht verbunden.',
+      DiagnosticsVerdict.dnsOutsideTunnel =>
+        'Der Servername wird außerhalb des VPN gesucht.',
+      DiagnosticsVerdict.portUnreachable => 'Der Server ist nicht erreichbar.',
+      DiagnosticsVerdict.notPaperless =>
+        'Der Server antwortet nicht als Paperless.',
+      DiagnosticsVerdict.tlsError =>
+        'Die sichere Verbindung ist fehlgeschlagen.',
+      DiagnosticsVerdict.connectionOk =>
+        'Die Verbindung zu Paperless funktioniert.',
+      DiagnosticsVerdict.unknown =>
+        'Die Verbindung konnte nicht geprüft werden.',
+    };
+    return [
+      'Datum: ${date.toIso8601String()}',
+      ...steps.map((step) => '${title(step.id)}: ${status(step.status)}'),
+      'Ergebnis: $result',
+    ].join('\n');
+  }
 }
 
 typedef SystemResolver = Future<List<String>> Function(String host);
@@ -111,10 +141,10 @@ class TunnelDiagnostics {
     TunnelDiagnosticsData? config;
     try {
       config = await channel.diagnostics();
-    } catch (e) {
+    } catch (_) {
       add(
         DiagnosticStep('tunnel', DiagnosticStatus.error, 'Tunnel', {
-          'error': '$e',
+          'error': 'Prüfung fehlgeschlagen',
         }),
       );
     }
@@ -192,10 +222,10 @@ class TunnelDiagnostics {
           },
         ),
       );
-    } catch (e) {
+    } catch (_) {
       add(
         DiagnosticStep('systemDns', DiagnosticStatus.error, 'System DNS', {
-          'error': '$e',
+          'error': 'Prüfung fehlgeschlagen',
         }),
       );
     }
@@ -227,11 +257,11 @@ class TunnelDiagnostics {
                 : null,
           ),
         );
-      } catch (e) {
+      } catch (_) {
         add(
           DiagnosticStep('vpnDns', DiagnosticStatus.error, 'VPN DNS', {
             'server': server,
-            'error': '$e',
+            'error': 'Prüfung fehlgeschlagen',
           }),
         );
       }
@@ -248,12 +278,12 @@ class TunnelDiagnostics {
             'milliseconds': elapsed.inMilliseconds,
           }),
         );
-      } catch (e) {
+      } catch (_) {
         add(
           DiagnosticStep('tcp', DiagnosticStatus.error, 'TCP', {
             'ip': ip,
             'port': uri.port,
-            'error': '$e',
+            'error': 'Prüfung fehlgeschlagen',
           }),
         );
       }
@@ -266,10 +296,7 @@ class TunnelDiagnostics {
         'Paperless HTTP',
         {
           'status': http.statusCode,
-          'wwwAuthenticate': http.wwwAuthenticate,
-          'contentType': http.contentType,
-          'server': http.server,
-          'error': http.error?.toString(),
+          'error': http.error == null ? null : 'Prüfung fehlgeschlagen',
         },
         hint: http.statusCode != null && !http.isPaperless
             ? 'Antwort stammt nicht von Paperless, möglicherweise vom Reverse Proxy'

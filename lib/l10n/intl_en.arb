@@ -1255,5 +1255,51 @@
         "type": "String"
       }
     }
+  },
+  "diagTitle": "Diagnostics",
+  "diagRun": "Check connection in detail",
+  "diagCopy": "Copy report",
+  "diagCopied": "Report copied",
+  "diagDetails": "Show details",
+  "diagDnsMissing": "No DNS servers are configured.",
+  "diagDns": "DNS servers",
+  "diagAddress": "Address",
+  "diagEndpoint": "Endpoint",
+  "diagAllowed": "Allowed IPs",
+  "diagOk": "OK",
+  "diagWarn": "Warning",
+  "diagError": "Error",
+  "diagSkipped": "Skipped",
+  "diagTunnel": "Tunnel",
+  "diagConfig": "Configuration",
+  "diagSystemDns": "System name lookup",
+  "diagVpnDns": "VPN name lookup",
+  "diagTcp": "Server connection",
+  "diagHttp": "Paperless response",
+  "diagVerdict": "Result",
+  "diagTunnelDown": "The tunnel is not connected. Check the VPN connection.",
+  "diagDnsOutside": "The server name resolves outside the VPN. Check your DNS settings.",
+  "diagPort": "The server cannot be reached. Check its address and port.",
+  "diagPaperless": "The server did not answer as Paperless. Check the server address.",
+  "diagTls": "The secure connection failed. Check the certificate.",
+  "diagSuccess": "The connection to Paperless works.",
+  "diagUnknown": "The connection could not be checked.",
+  "diagLocation": "Find diagnostics under Settings → Connection on the go.",
+  "diagPortLabel": "Port",
+  "diagDuration": "Response time: {milliseconds} ms",
+  "diagHttpStatus": "HTTP status: {code}",
+  "@diagDuration": {
+    "placeholders": {
+      "milliseconds": {
+        "type": "int"
+      }
+    }
+  },
+  "@diagHttpStatus": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
   }
 }
