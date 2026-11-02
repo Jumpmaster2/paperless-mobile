@@ -49,3 +49,12 @@ Absichtlich geänderte Dateien:
 - `test/core/tunnel/http_prober_test.dart` und `dns_client_test.dart`: socketfreie Tests der HTTP-Signatur und DNS-Paketverarbeitung.
 
 Die Seite „Verbindung von unterwegs“ bietet eine Diagnose mit einzelnen Prüfschritten und einem kopierbaren Bericht. Die Prüfung verwendet die eingegebene Serveradresse und zeigt die gespeicherten Verbindungseinstellungen ohne Schlüssel an.
+
+### Heimnetz-Erkennung
+
+Optional gespeicherte WLAN-Namen (`tunnel.homeSsids`) werden exakt verglichen.
+Im Heimnetz startet die App keinen Tunnel und beendet einen selbst gestarteten
+Tunnel. Außerhalb wird direkt ein konfigurierter Tunnel verwendet; bei
+unbekanntem WLAN bleibt die bisherige direkte Serverprüfung erhalten. Für die
+SSID-Erkennung benötigt Android die Standortberechtigung und einen aktiven
+Standortdienst. Netzwechsel im Vordergrund lösen eine erneute Prüfung aus.

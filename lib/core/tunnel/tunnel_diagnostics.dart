@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'dns_client.dart';
+import 'home_network_detector.dart';
 import 'http_prober.dart';
 import 'ipv4_cidr.dart';
 import 'tunnel_channel.dart';
@@ -51,6 +52,7 @@ class DiagnosticsReport {
   // platform data. They can contain credentials or an entire configuration.
   String toText() {
     String title(String id) => switch (id) {
+      'home_network' => 'Heimnetz',
       'tunnel' => 'Tunnel',
       'config' => 'Einstellungen',
       'systemDns' => 'Namenssuche des Geräts',
@@ -84,6 +86,14 @@ class DiagnosticsReport {
       'Datum: ${date.toIso8601String()}',
       ...steps.map((step) => '${title(step.id)}: ${status(step.status)}'),
       'Ergebnis: $result',
+      if (parameters['homeNetworkHint'] ==
+          'Der Tunnel hilft hier nicht. Server oder Proxy prüfen.')
+        'Der Tunnel hilft hier nicht. Server oder Proxy prüfen.',
+      if (parameters['homeNetworkHint'] == 'Kein Tunnel konfiguriert.')
+        'Kein Tunnel konfiguriert.',
+      if (parameters['homeNetworkHint'] ==
+          'Standortberechtigung und Standortdienst prüfen.')
+        'Standortberechtigung und Standortdienst prüfen.',
     ].join('\n');
   }
 }
@@ -99,11 +109,19 @@ class TunnelDiagnostics {
     TcpConnector? tcpConnector,
     HttpProber? httpProber,
     DateTime Function()? clock,
+    HomeNetworkDetector? homeNetworkDetector,
+    List<String> Function()? homeSsids,
   }) : dnsClient = dnsClient ?? DnsClient(),
        resolver = resolver ?? _resolve,
        tcpConnector = tcpConnector ?? _connect,
        httpProber = httpProber ?? HttpProber(),
-       clock = clock ?? DateTime.now;
+       clock = clock ?? DateTime.now,
+       homeNetworkDetector =
+           homeNetworkDetector ?? HomeNetworkDetector(channel.currentSsid),
+       homeSsids = homeSsids ?? _emptySsids;
+  final HomeNetworkDetector homeNetworkDetector;
+  final List<String> Function() homeSsids;
+  static List<String> _emptySsids() => [];
   final TunnelChannel channel;
   final DnsClient dnsClient;
   final SystemResolver resolver;
@@ -138,6 +156,23 @@ class TunnelDiagnostics {
       onStep?.call(step);
     }
 
+    final configuredSsids = homeSsids();
+    final home = await homeNetworkDetector.detect(configuredSsids);
+    add(
+      DiagnosticStep(
+        'home_network',
+        home.state == HomeNetworkState.unknown
+            ? DiagnosticStatus.warn
+            : DiagnosticStatus.ok,
+        'Heimnetz',
+        {
+          'state': home.state.name,
+          'ssid': home.ssid,
+          'homeSsids': configuredSsids,
+          'reason': home.reason?.name,
+        },
+      ),
+    );
     TunnelDiagnosticsData? config;
     try {
       config = await channel.diagnostics();
@@ -316,6 +351,18 @@ class TunnelDiagnostics {
         ? DiagnosticsVerdict.notPaperless
         : DiagnosticsVerdict.connectionOk;
     final params = <String, Object?>{};
+    if (home.state == HomeNetworkState.atHome && !http.isPaperless) {
+      params['homeNetworkHint'] =
+          'Der Tunnel hilft hier nicht. Server oder Proxy prüfen.';
+    } else if (home.state == HomeNetworkState.away &&
+        !await channel.hasConfig()) {
+      params['homeNetworkHint'] = 'Kein Tunnel konfiguriert.';
+    } else if (home.reason == HomeNetworkReason.permissionMissing ||
+        home.reason == HomeNetworkReason.locationOff) {
+      params['homeNetworkHint'] =
+          'Standortberechtigung und Standortdienst prüfen.';
+    }
+
     if (verdict == DiagnosticsVerdict.dnsOutsideTunnel)
       params['recommendation'] =
           'Server-Adresse fest zuordnen oder Auflösung über VPN-DNS einschalten';

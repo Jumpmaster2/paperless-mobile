@@ -62,8 +62,8 @@ class _TunnelPageState extends State<TunnelPage> {
       _report = null;
     });
     try {
-      final report =
-          await (widget.diagnostics ?? TunnelDiagnostics(_manager.channel)).run(
+      final report = await (widget.diagnostics ?? _manager.createDiagnostics())
+          .run(
             uri.toString(),
             onStep: (step) {
               if (mounted) setState(() => _steps.add(step));

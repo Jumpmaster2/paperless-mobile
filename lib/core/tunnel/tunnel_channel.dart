@@ -51,6 +51,14 @@ class TunnelDiagnosticsData {
 List<String> _strings(Object? value) =>
     value is List ? value.whereType<String>().toList() : [];
 
+enum SsidStatus { ok, permissionMissing, locationOff, notWifi, unknown }
+
+class SsidResult {
+  const SsidResult(this.ssid, this.status);
+  final String? ssid;
+  final SsidStatus status;
+}
+
 enum TunnelStatus { up, down }
 
 class TunnelException implements Exception {
@@ -72,6 +80,7 @@ abstract class TunnelChannel {
   Future<TunnelStatus> down();
   Future<TunnelStatus> status();
   Future<TunnelDiagnosticsData> diagnostics();
+  Future<SsidResult> currentSsid();
 }
 
 class MethodTunnelChannel implements TunnelChannel {
@@ -141,6 +150,21 @@ class MethodTunnelChannel implements TunnelChannel {
       mtu: data['mtu'] is int ? data['mtu'] as int : null,
       peers: peers,
     );
+  }
+
+  @override
+  Future<SsidResult> currentSsid() async {
+    final data = await _invoke<Object>('currentSsid');
+    if (data is! Map) return const SsidResult(null, SsidStatus.unknown);
+    final status = switch (data['status']) {
+      'ok' => SsidStatus.ok,
+      'permission_missing' => SsidStatus.permissionMissing,
+      'location_off' => SsidStatus.locationOff,
+      'not_wifi' => SsidStatus.notWifi,
+      _ => SsidStatus.unknown,
+    };
+    final ssid = data['ssid'];
+    return SsidResult(ssid is String ? ssid : null, status);
   }
 
   @override

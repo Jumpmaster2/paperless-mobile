@@ -68,4 +68,36 @@ void main() {
     expect(await run(tls: true), DiagnosticsVerdict.tlsError);
     expect(await run(), DiagnosticsVerdict.connectionOk);
   });
+  test(
+    'home network step uses saved SSIDs and explains unknown status',
+    () async {
+      final channel = DiagnosticChannel(true)
+        ..ssid = const SsidResult('Home', SsidStatus.ok);
+      final names = <String>['Home'];
+      final diagnostics = TunnelDiagnostics(
+        channel,
+        homeSsids: () => names,
+        resolver: (_) async => [],
+        dnsClient: DnsClient(exchange: (_, _) async => throw Exception()),
+        httpProber: HttpProber(
+          request: (_) async => HttpProbeResult(statusCode: 503),
+        ),
+      );
+      var report = await diagnostics.run('https://example.com');
+      var step = report.steps.singleWhere((step) => step.id == 'home_network');
+      expect(step.data['state'], 'atHome');
+      expect(step.data['ssid'], 'Home');
+      expect(step.data['homeSsids'], ['Home']);
+      expect(report.toText(), contains('Server oder Proxy prüfen'));
+      channel.ssid = const SsidResult(null, SsidStatus.permissionMissing);
+      report = await diagnostics.run('https://example.com');
+      step = report.steps.singleWhere((step) => step.id == 'home_network');
+      expect(step.data['reason'], 'permissionMissing');
+      expect(report.toText(), contains('Standortberechtigung'));
+      channel.ssid = const SsidResult('Other', SsidStatus.ok);
+      channel.configured = false;
+      report = await diagnostics.run('https://example.com');
+      expect(report.toText(), contains('Kein Tunnel konfiguriert'));
+    },
+  );
 }
