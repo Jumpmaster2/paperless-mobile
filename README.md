@@ -2,7 +2,7 @@
 
 **Paperless Mobile with a built-in WireGuard tunnel** – reach your [Paperless-ngx](https://github.com/paperless-ngx/paperless-ngx) server from anywhere, even if it is only available inside your home network, without switching a VPN on by hand.
 
-KronenPaperless is a fork of [Paperless Mobile](https://github.com/astubenbord/paperless-mobile) by Anton Stubenbord (GPL-3.0). All features of Paperless Mobile are unchanged; the fork only adds the tunnel. The changes have also been offered upstream in [astubenbord/paperless-mobile#707](https://github.com/astubenbord/paperless-mobile/pull/707) (see also [#388](https://github.com/astubenbord/paperless-mobile/issues/388)).
+KronenPaperless is a fork of [Paperless Mobile](https://github.com/astubenbord/paperless-mobile) by Anton Stubenbord (GPL-3.0). All features of Paperless Mobile are unchanged; the fork only adds the tunnel. The tunnel was offered upstream ([#707](https://github.com/astubenbord/paperless-mobile/pull/707), [#388](https://github.com/astubenbord/paperless-mobile/issues/388)), but the maintainer prefers to keep it out of the original app, so it lives on in this fork.
 
 ## How it works
 
@@ -15,7 +15,7 @@ KronenPaperless is a fork of [Paperless Mobile](https://github.com/astubenbord/p
 ## Install
 
 - **GitHub:** signed APKs are attached to the [releases](https://github.com/Jumpmaster2/paperless-mobile/releases). Works well with [Obtainium](https://github.com/ImranR98/Obtainium) for automatic updates.
-- **Google Play:** currently in closed testing. If you would like to help, please open an [issue](https://github.com/Jumpmaster2/paperless-mobile/issues) or comment on [#388](https://github.com/astubenbord/paperless-mobile/issues/388).
+- **Google Play:** currently in closed testing. To join, become a member of the Google Group [kronenpaperless-tester](https://groups.google.com/g/kronenpaperless-tester), then open the [opt-in link](https://play.google.com/apps/testing/de.koeddi.kronenpaperless) and install from Google Play (no "unknown sources" needed). Feedback is welcome in the [issues](https://github.com/Jumpmaster2/paperless-mobile/issues).
 - The package name is `de.koeddi.kronenpaperless`, so it can be installed next to the original Paperless Mobile. The GitHub and the Google Play version are signed differently: stick to one source, otherwise uninstall first.
 
 ## Kurz auf Deutsch
