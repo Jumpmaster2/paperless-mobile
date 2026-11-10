@@ -82,3 +82,6 @@ assets/changelogs/*.md
 *.jks
 *.p12
 android/.kotlin/
+
+# Lokale Claude-Code-Einstellungen: koennen freigegebene Befehle samt Zugangsdaten enthalten
+**/.claude/settings.local.json
