@@ -15,16 +15,18 @@ object WgConfig {
         val config = try {
             require(packageName.matches(Regex("[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)+")))
             var inInterface = false
+            var inPeer = false
             val pinned = buildString {
                 for (line in text.lineSequence()) {
                     val content = line.substringBefore('#').trim()
                     if (content.startsWith("[")) {
                         inInterface = content.equals("[Interface]", ignoreCase = true)
+                        inPeer = content.equals("[Peer]", ignoreCase = true)
                         appendLine(line)
-                        if (inInterface) appendLine("IncludedApplications = $packageName")
+                        if (inPeer) appendLine("AllowedIPs = 0.0.0.0/0, ::/0")
                     } else if (!(inInterface && content.substringBefore('=').trim().let {
                         it.equals("IncludedApplications", true) || it.equals("ExcludedApplications", true)
-                    })) appendLine(line)
+                    }) && !(inPeer && content.substringBefore('=').trim().equals("AllowedIPs", true))) appendLine(line)
                 }
             }
             Config.parse(pinned.reader().buffered())

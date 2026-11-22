@@ -94,14 +94,9 @@ class TunnelManager with WidgetsBindingObserver {
       setHomeSsids(homeSsids.where((s) => s != ssid).toList());
 
   bool get enabled => preferences.getBool('tunnel.enabled') ?? false;
-  bool get directCheck => preferences.getBool('tunnel.directCheck') ?? true;
   int get delayMinutes => preferences.getInt('tunnel.delayMinutes') ?? 5;
   Future<void> setEnabled(bool value) async {
     await preferences.setBool('tunnel.enabled', value);
-  }
-
-  Future<void> setDirectCheck(bool value) async {
-    await preferences.setBool('tunnel.directCheck', value);
   }
 
   /// Zero means never disconnect automatically.
@@ -147,13 +142,16 @@ class TunnelManager with WidgetsBindingObserver {
   Future<void> testConnection(String url) async {
     if (!await channel.hasConfig())
       throw const TunnelException('config_missing');
-    if (!await channel.isPermitted())
-      throw const TunnelException('vpn_not_authorized');
+    if (await channel.hasOtherVpn()) throw const TunnelException('other_vpn_active');
     final wasUp = await channel.status() == TunnelStatus.up;
+    if (!wasUp && await probe(url)) return;
+    if (!await channel.isPermitted()) throw const TunnelException('vpn_not_authorized');
+    var started = false;
     try {
       if (!wasUp && await channel.up() != TunnelStatus.up) {
         throw const TunnelException('vpn_start_failed');
       }
+      started = !wasUp;
       final deadline = DateTime.now().add(connectTimeout);
       do {
         if (await probe(url)) return;
@@ -161,7 +159,7 @@ class TunnelManager with WidgetsBindingObserver {
       } while (DateTime.now().isBefore(deadline));
       throw const TunnelException('server_unreachable');
     } finally {
-      if (!wasUp) await channel.down();
+      if (started) await channel.down();
     }
   }
 
@@ -182,14 +180,11 @@ class TunnelManager with WidgetsBindingObserver {
         return;
       }
       if (!await channel.hasConfig()) return;
-      if (home.state != HomeNetworkState.away &&
-          directCheck &&
-          await probe(url))
-        return;
+      final wasUp = await channel.status() == TunnelStatus.up;
+      if (!wasUp && (await channel.hasOtherVpn() || await probe(url))) return;
       state.value = const TunnelViewState(TunnelConnectionState.connecting);
       if (!await channel.isPermitted())
         throw const TunnelException('vpn_not_authorized');
-      final wasUp = await channel.status() == TunnelStatus.up;
       if (!wasUp) {
         if (await channel.up() != TunnelStatus.up)
           throw const TunnelException('vpn_start_failed');

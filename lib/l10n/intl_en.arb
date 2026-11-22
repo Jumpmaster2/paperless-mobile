@@ -1205,7 +1205,7 @@
   "tunnelPaste": "Paste configuration",
   "tunnelSave": "Save configuration",
   "tunnelStep2": "2. Allow VPN",
-  "tunnelPermissionHelp": "Android asks for permission so this app can create a secure connection.",
+  "tunnelPermissionHelp": "While the tunnel is connected, all device traffic uses the VPN.",
   "tunnelPermission": "Allow VPN",
   "tunnelGranted": "Permission granted",
   "tunnelStep3": "3. Test connection",
@@ -1303,7 +1303,7 @@
     }
   },
   "homeTitle": "Home network (Wi-Fi)",
-  "homeExplanation": "Enter the names of your home Wi-Fi networks here. The app does not need a tunnel on these networks; elsewhere it turns the tunnel on automatically.",
+  "homeExplanation": "The tunnel stays off on your home Wi-Fi networks. On other networks it starts only if the server is not directly reachable and no other VPN is active.",
   "homePrivacy": "On Android, reading the Wi-Fi name requires location permission and enabled location services. The app does not store or send your location.",
   "homeName": "Wi-Fi name",
   "homeAdd": "Add",

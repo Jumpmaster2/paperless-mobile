@@ -101,6 +101,15 @@ class DiagnosticsReport {
 typedef SystemResolver = Future<List<String>> Function(String host);
 typedef TcpConnector = Future<Duration> Function(String address, int port);
 
+bool _ipv6DefaultRoute(String cidr) {
+  final parts = cidr.split('/');
+  if (parts.length != 2 || parts[1] != '0') return false;
+  final address = InternetAddress.tryParse(parts[0]);
+  return address != null &&
+      address.type == InternetAddressType.IPv6 &&
+      address.rawAddress.every((byte) => byte == 0);
+}
+
 class TunnelDiagnostics {
   TunnelDiagnostics(
     this.channel, {
@@ -250,7 +259,11 @@ class TunnelDiagnostics {
                   (ip) => {
                     'ip': ip,
                     'private': isPrivateIpv4(ip),
-                    'allowed': allowed.any((cidr) => ipv4InCidr(ip, cidr)),
+                    'allowed': allowed.any(
+                      (cidr) => ipv4InCidr(ip, cidr) ||
+                          (InternetAddress.tryParse(ip)?.type == InternetAddressType.IPv6 &&
+                              _ipv6DefaultRoute(cidr)),
+                    ),
                   },
                 )
                 .toList(),

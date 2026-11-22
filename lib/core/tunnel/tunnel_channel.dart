@@ -74,6 +74,7 @@ abstract class TunnelChannel {
   Future<TunnelConfigInfo> importConfig(String text);
   Future<bool> hasConfig();
   Future<void> deleteConfig();
+  Future<bool> hasOtherVpn();
   Future<bool> isPermitted();
   Future<bool> requestPermission();
   Future<TunnelStatus> up();
@@ -174,6 +175,8 @@ class MethodTunnelChannel implements TunnelChannel {
     await _invoke<void>('deleteConfig');
   }
 
+  @override
+  Future<bool> hasOtherVpn() async => (await _invoke<bool>('hasOtherVpn'))!;
   @override
   Future<bool> isPermitted() async => (await _invoke<bool>('isPermitted'))!;
   @override

@@ -63,7 +63,15 @@ class TunnelController private constructor(context: Context) {
 
     fun hasConfig(): Boolean = safely { store.exists() }
     fun deleteConfig() = safely { store.delete() }
+    fun hasOtherVpn(): Boolean {
+        if (backend.getState(tunnel) == Tunnel.State.UP) return false
+        val connectivity = context.getSystemService(ConnectivityManager::class.java)
+        return connectivity.allNetworks.any {
+            connectivity.getNetworkCapabilities(it)?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
+        }
+    }
     fun up(): String = safely {
+        if (hasOtherVpn()) throw TunnelFailure("other_vpn_active")
         if (VpnService.prepare(context) != null) throw TunnelFailure("vpn_not_authorized")
         val text = store.load() ?: throw TunnelFailure("config_missing")
         backend.setState(tunnel, Tunnel.State.UP, WgConfig.parseAndPin(text, context.packageName)).name

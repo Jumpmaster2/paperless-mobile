@@ -26,6 +26,9 @@ class FakeChannel implements TunnelChannel {
         searchDomains: [],
         peers: [],
       );
+  bool otherVpn = false;
+  @override
+  Future<bool> hasOtherVpn() async => otherVpn;
   bool permitted = true;
   bool configured = true;
   TunnelStatus current = TunnelStatus.down;
@@ -83,6 +86,17 @@ void main() {
     );
     await manager.ensureReachable('https://example.test');
     expect(channel.ups, 0);
+    manager.dispose();
+  });
+  test('foreign VPN prevents start and is never disconnected', () async {
+    channel.otherVpn = true;
+    final manager = TunnelManager(channel, prefs,
+      connectivityChanges: const Stream.empty(), probe: (_) async => false);
+    await manager.ensureReachable('https://example.test');
+    await expectLater(manager.testConnection('https://example.test'),
+      throwsA(isA<TunnelException>().having((e) => e.code, 'code', 'other_vpn_active')));
+    expect(channel.ups, 0);
+    expect(channel.downs, 0);
     manager.dispose();
   });
   test('unreachable server starts tunnel and retries', () async {
@@ -200,7 +214,7 @@ void main() {
   });
 
   test(
-    'away starts before probing; unknown and empty list probe directly',
+    'all networks probe directly before starting',
     () async {
       var probes = 0;
       final manager = TunnelManager(
@@ -209,7 +223,7 @@ void main() {
         connectivityChanges: const Stream.empty(),
         probe: (_) async {
           probes++;
-          if (channel.ssid.status == SsidStatus.ok) expect(channel.ups, 1);
+
           return true;
         },
       );
@@ -225,7 +239,7 @@ void main() {
       await manager.addHomeSsid('Home');
       channel.ssid = const SsidResult('Other', SsidStatus.ok);
       await manager.ensureReachable('https://example.test');
-      expect(channel.ups, 1);
+      expect(channel.ups, 0);
       expect(probes, 3);
       manager.dispose();
     },
@@ -240,7 +254,7 @@ void main() {
         channel,
         prefs,
         connectivityChanges: changes.stream,
-        probe: (_) async => true,
+        probe: (_) async => channel.current == TunnelStatus.up,
       );
       await manager.addHomeSsid('Home');
       await manager.ensureReachable('https://example.test');

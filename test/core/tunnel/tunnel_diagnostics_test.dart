@@ -7,7 +7,9 @@ import 'package:paperless_mobile/core/tunnel/tunnel_diagnostics.dart';
 import 'tunnel_manager_test.dart' show FakeChannel;
 
 class DiagnosticChannel extends FakeChannel {
-  DiagnosticChannel(this.handshake);
+  DiagnosticChannel(this.handshake, {this.fullRoute = false, this.ipv6Route = '::/0'});
+  final bool fullRoute;
+  final String ipv6Route;
   final bool handshake;
   @override
   Future<TunnelDiagnosticsData> diagnostics() async => TunnelDiagnosticsData(
@@ -17,7 +19,7 @@ class DiagnosticChannel extends FakeChannel {
     searchDomains: [],
     peers: [
       TunnelPeerInfo(
-        allowedIps: ['10.0.0.0/8'],
+        allowedIps: fullRoute ? ['0.0.0.0/0', ipv6Route] : ['10.0.0.0/8'],
         rxBytes: 1,
         txBytes: 2,
         lastHandshake: handshake ? DateTime.utc(2026) : null,
@@ -61,6 +63,22 @@ void main() {
     return (await diagnostics.run('https://example.com')).verdict;
   }
 
+  test('full routes include public IPv4 and IPv6 addresses', () async {
+    for (final route in ['::/0', '0:0:0:0:0:0:0:0/0', '::1/0', '::/1']) {
+    final diagnostics = TunnelDiagnostics(
+      DiagnosticChannel(true, fullRoute: true, ipv6Route: route),
+      resolver: (_) async => ['8.8.8.8', '2001:db8::1'],
+      dnsClient: DnsClient(exchange: (_, _) async => throw Exception()),
+      tcpConnector: (_, __) async => const Duration(milliseconds: 1),
+      httpProber: HttpProber(request: (_) async => HttpProbeResult(statusCode: 503)),
+    );
+    final report = await diagnostics.run('https://example.com');
+    final step = report.steps.singleWhere((step) => step.id == 'systemDns');
+    final addresses = step.data['addresses'] as List;
+    expect((addresses[0] as Map)['allowed'], isTrue);
+    expect((addresses[1] as Map)['allowed'], route == '::/0' || route == '0:0:0:0:0:0:0:0/0');
+    }
+  });
   test('classifies diagnostic scenarios', () async {
     expect(await run(handshake: false), DiagnosticsVerdict.tunnelDown);
     expect(await run(external: true), DiagnosticsVerdict.dnsOutsideTunnel);

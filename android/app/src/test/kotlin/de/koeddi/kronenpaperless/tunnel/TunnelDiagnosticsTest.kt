@@ -23,7 +23,7 @@ class TunnelDiagnosticsTest {
         val peer = (data["peers"] as List<*>).first() as Map<*, *>
         assertEquals("vpn.example.com", peer["endpointHost"])
         assertEquals(51820, peer["endpointPort"])
-        assertEquals(listOf("192.168.2.0/24"), peer["allowedIps"])
+        assertEquals(setOf("0.0.0.0/0", "::/0"), (peer["allowedIps"] as List<*>).toSet())
         assertEquals(7L, peer["rxBytes"])
         assertFalse(data.toString().contains("Key", ignoreCase = true))
     }

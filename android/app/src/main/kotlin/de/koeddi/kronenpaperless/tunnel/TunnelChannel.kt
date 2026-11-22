@@ -22,7 +22,7 @@ class TunnelChannel(private val activity: FlutterFragmentActivity, engine: Flutt
                 "isPermitted" -> try { result.success(VpnService.prepare(activity) == null) }
                     catch (_: Exception) { result.error("unknown", null, null) }
                 "requestPermission" -> requestPermission(result)
-                "importConfig", "hasConfig", "deleteConfig", "up", "down", "status", "diagnostics", "currentSsid" -> {
+                "importConfig", "hasConfig", "deleteConfig", "up", "down", "status", "diagnostics", "currentSsid", "hasOtherVpn" -> {
                     val text = if (call.method == "importConfig") call.argument<String>("text") else null
                     if (call.method == "importConfig" && text == null) {
                         result.error("config_invalid", null, null)
@@ -36,6 +36,7 @@ class TunnelChannel(private val activity: FlutterFragmentActivity, engine: Flutt
                                 "down" -> controller.down()
                                 "diagnostics" -> controller.diagnostics()
                                 "currentSsid" -> controller.currentSsid()
+                                "hasOtherVpn" -> controller.hasOtherVpn()
                                 else -> controller.status()
                             }
                             main.post { result.success(value) }
@@ -52,6 +53,7 @@ class TunnelChannel(private val activity: FlutterFragmentActivity, engine: Flutt
     private fun requestPermission(result: MethodChannel.Result) {
         if (permissionResult != null) { result.error("unknown", null, null); return }
         try {
+            if (controller.hasOtherVpn()) { result.error("other_vpn_active", null, null); return }
             val intent = VpnService.prepare(activity)
             if (intent == null) result.success(true)
             else {

@@ -17,6 +17,7 @@ import 'package:paperless_mobile/generated/l10n/app_localizations.dart';
 
 String tunnelErrorMessage(S s, String code) => switch (code) {
   'vpn_not_authorized' => s.tunnelErrorPermission,
+  'other_vpn_active' => s.tunnelErrorStart,
   'dns_failure' => s.tunnelErrorDns,
   'config_missing' => s.tunnelErrorMissing,
   'vpn_start_failed' => s.tunnelErrorStart,
@@ -670,17 +671,7 @@ class _TunnelPageState extends State<TunnelPage> with WidgetsBindingObserver {
                   ),
                 },
           ),
-          SwitchListTile(
-            title: Text(s.tunnelDirect),
-            subtitle: Text(s.homeDirectHint),
-            value: _manager.directCheck,
-            onChanged: _busy
-                ? null
-                : (v) async {
-                    await _manager.setDirectCheck(v);
-                    if (mounted) setState(() {});
-                  },
-          ),
+          Text(s.tunnelDirect),
           DropdownButtonFormField<int>(
             initialValue: _manager.delayMinutes,
             decoration: InputDecoration(labelText: s.tunnelDelay),

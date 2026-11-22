@@ -2,6 +2,8 @@ package de.koeddi.kronenpaperless.tunnel
 
 import org.junit.Assert.*
 import org.junit.Test
+import java.net.Inet4Address
+import java.net.Inet6Address
 
 class WgConfigTest {
     private val key = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
@@ -9,17 +11,24 @@ class WgConfigTest {
         [Interface]
         PrivateKey = $key
         Address = 192.0.2.2/32
+        DNS = 192.0.2.53
         IncludedApplications = org.example.other
         ExcludedApplications = org.example.excluded
         [Peer]
         PublicKey = $key
-        AllowedIPs = 0.0.0.0/0
+        AllowedIPs = 192.168.0.0/16
         Endpoint = vpn.example.com:51820
     """.trimIndent()
 
-    @Test fun pinsOwnPackageAndRemovesExclusions() {
+    @Test fun routesAllTrafficAndRemovesApplicationFilters() {
         val parsed = WgConfig.parseAndPin(config, "de.example.app.debug")
-        assertEquals(setOf("de.example.app.debug"), parsed.`interface`.includedApplications)
+        assertTrue(parsed.`interface`.includedApplications.isEmpty())
+        val routes = parsed.peers.first().allowedIps
+        assertEquals(2, routes.size)
+        assertTrue(routes.all { it.mask == 0 && it.address.isAnyLocalAddress })
+        assertEquals(1, routes.count { it.address is Inet4Address })
+        assertEquals(1, routes.count { it.address is Inet6Address })
+        assertEquals("192.0.2.53", parsed.`interface`.dnsServers.first().hostAddress)
         assertTrue(parsed.`interface`.excludedApplications.isEmpty())
         assertEquals(1, parsed.peers.size)
     }
